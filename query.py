@@ -1,35 +1,58 @@
 from google.cloud import bigquery
 
-# initialize the BigQuery client
-client = bigquery.Client()
+def main():
+    client = bigquery.Client()
 
-# define the dataset and table
-dataset_id = 'enduring-broker-426815-b2.test_data'
-table_id = 'test'
+    # Define dataset and table IDs
+    project_id = 'enduring-broker-426815-b2'
+    dataset_id = 'test_data'
+    table_id = 'test'
 
-# construct a reference to the dataset and table
-dataset_ref = client.dataset('test_data')
-table_ref = dataset_ref.table('test')
+    while True:
+        print("\nMenu:")
+        print("1. Add data")
+        print("2. View table")
+        print("3. Quit")
 
-# fetch the table
-table = client.get_table(table_ref)
+        choice = input("Enter your choice (1/2/3): ")
 
-# print the table schema
-print(f"Table {table_id} in dataset {dataset_id} schema:")
-for schema_field in table.schema:
-    print(f"  - {schema_field.name} ({schema_field.field_type})")
+        if choice == '1':
+            add_data(client, project_id, dataset_id, table_id)
+        elif choice == '2':
+            view_table(client, project_id, dataset_id, table_id)
+        elif choice == '3':
+            print("Exiting the program.")
+            break
+        else:
+            print("Invalid choice. Please enter a valid option.")
 
-# query the table
-query = f"SELECT * FROM `{dataset_id}.{table_id}`"
-query_job = client.query(query)
+def add_data(client, project_id, dataset_id, table_id):
+    # Fetch table schema
+    table_ref = client.dataset(dataset_id, project=project_id).table(table_id)
+    table = client.get_table(table_ref)
 
-# fetch the results
-rows = list(query_job.result())
+    name = input("Enter name: ")
+    age = int(input("Enter age: "))
 
-# print the results
-print("Query results:")
-if not rows:
-    print("No rows found.")
-else:
-    for row in rows:
-        print(row)
+    rows_to_insert = [{"name": name, "age": age}]
+    errors = client.insert_rows(table, rows_to_insert)
+
+    if not errors:
+        print("Data added successfully.")
+    else:
+        print(f"Encountered errors while inserting data: {errors}")
+
+def view_table(client, project_id, dataset_id, table_id):
+    query = f"SELECT * FROM `{project_id}.{dataset_id}.{table_id}`"
+    query_job = client.query(query)
+    rows = list(query_job.result())
+
+    print("\nQuery results:")
+    if not rows:
+        print("No rows found.")
+    else:
+        for row in rows:
+            print(f"Name: {row['name']}, Age: {row['age']}")
+
+if __name__ == "__main__":
+    main()
