@@ -1,76 +1,61 @@
+from flask import Flask, render_template
 from google.cloud import bigquery
 from datetime import datetime
-import time
+import matplotlib.pyplot as plt
+from io import BytesIO
+import base64
 
-def main():
-    client = bigquery.Client()
+# Initialize Flask app
+app = Flask(__name__)
 
-    # Define dataset and table IDs
-    project_id = 'enduring-broker-426815-b2'
-    dataset_id = 'test_data'
-    table_id = 'test2'
+# Initialize BigQuery client
+client = bigquery.Client()
+project_id = 'enduring-broker-426815-b2'
+dataset_id = 'test_data'
+table_id = 'test2'
 
-    # Simple menu
-    while True:
-        print("\nMenu:")
-        print("1. Add data")
-        print("2. View table")
-        print("3. Quit")
-
-        choice = input("Enter your choice (1/2/3): ")
-
-        if choice == '1':
-            add_data(client, project_id, dataset_id, table_id)
-        elif choice == '2':
-            try:
-                view_table(client, project_id, dataset_id, table_id)
-            except Exception as e:
-                print(f"Error viewing table: {e}")
-        elif choice == '3':
-            print("Exiting the program.")
-            break
-        else:
-            print("Invalid choice. Please enter a valid option.")
-
-def add_data(client, project_id, dataset_id, table_id):
-    table_ref = client.dataset(dataset_id, project=project_id).table(table_id)
-    table = client.get_table(table_ref)
-
-    # Prompt for input
-    volume = int(input("Enter volume (integer): "))
-
-    # Prepare rows to insert
-    rows_to_insert = [{"time": datetime.utcnow(), "volume": volume}]
-    errors = client.insert_rows(table, rows_to_insert)
-
-    if not errors:
-        print("Data added successfully.")
-    else:
-        print(f"Encountered errors while inserting data: {errors}")
-
-    # Introduce a short delay before querying to allow for data availability
-    time.sleep(1)
-
-def view_table(client, project_id, dataset_id, table_id):
+# Function to fetch data from BigQuery
+def fetch_data(client, project_id, dataset_id, table_id):
     table_ref = client.dataset(dataset_id, project=project_id).table(table_id)
     
-    # Check if table exists
     try:
         table = client.get_table(table_ref)
     except Exception as e:
         raise RuntimeError(f"Failed to fetch table {dataset_id}.{table_id}: {e}")
         
-    # Query table
     query = f"SELECT * FROM `{project_id}.{dataset_id}.{table_id}`"
     query_job = client.query(query)
     rows = list(query_job.result())
+    
+    return rows
 
-    print("\nQuery results:")
-    if not rows:
-        print("No rows found.")
-    else:
-        for row in rows:
-            print(f"Timestamp: {row['time']}, Volume: {row['volume']}")
+# Route for the home page
+@app.route('/')
+def index():
+    try:
+        rows = fetch_data(client, project_id, dataset_id, table_id)
+    except Exception as e:
+        return f"Error fetching data: {e}"
+    
+    timestamps = [row['time'] for row in rows]
+    volumes = [row['volume'] for row in rows]
+    
+    # Plotting the data
+    plt.figure(figsize=(10, 6))
+    plt.plot(timestamps, volumes, marker='o', linestyle='-', color='b')
+    plt.title('Volume vs Time')
+    plt.xlabel('Timestamp')
+    plt.ylabel('Volume')
+    plt.xticks(rotation=45)
+    plt.tight_layout()
 
-if __name__ == "__main__":
-    main()
+    # Convert plot to PNG image
+    img = BytesIO()
+    plt.savefig(img, format='png')
+    img.seek(0)
+    plot_url = base64.b64encode(img.getvalue()).decode()
+
+    return render_template('index.html', plot_url=plot_url)
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=8080)
