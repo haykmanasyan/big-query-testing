@@ -1,11 +1,7 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, jsonify
 from google.cloud import bigquery
-from datetime import datetime
-import matplotlib.pyplot as plt
-from io import BytesIO
-import base64
+import datetime
 
-# Initialize Flask app
 app = Flask(__name__)
 
 # Initialize BigQuery client
@@ -32,30 +28,21 @@ def fetch_data(client, project_id, dataset_id, table_id):
 # Route for the home page
 @app.route('/')
 def index():
+    return render_template('index.html')
+
+# Route to get data as JSON
+@app.route('/data')
+def data():
     try:
         rows = fetch_data(client, project_id, dataset_id, table_id)
+        print("Fetched rows:", rows)  # Debugging statement
     except Exception as e:
-        return f"Error fetching data: {e}"
-    
-    timestamps = [row['time'] for row in rows]
-    volumes = [row['volume'] for row in rows]
-    
-    # Plotting the data
-    plt.figure(figsize=(10, 6))
-    plt.plot(timestamps, volumes, marker='o', linestyle='-', color='b')
-    plt.title('Volume vs Time')
-    plt.xlabel('Timestamp')
-    plt.ylabel('Volume')
-    plt.xticks(rotation=45)
-    plt.tight_layout()
+        return jsonify({"error": str(e)})
 
-    # Convert plot to PNG image
-    img = BytesIO()
-    plt.savefig(img, format='png')
-    img.seek(0)
-    plot_url = base64.b64encode(img.getvalue()).decode()
-
-    return render_template('index.html', plot_url=plot_url)
+    # Convert timestamps to ISO format
+    data = [{"time": row['time'].isoformat(), "volume": row['volume']} for row in rows]
+    print("Formatted data:", data)  # Debugging statement
+    return jsonify(data)
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8080)
