@@ -6,10 +6,21 @@
     <title>Plot Data</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <style>
+        /* Adjust canvas size and margin */
+        #chartContainer {
+            width: 600px;  /* Fixed width */
+            height: 600px; /* Fixed height */
+            margin: auto;
+            display: block;
+        }
+    </style>
 </head>
 <body>
     <h1>Volume vs Time Plot</h1>
-    <canvas id="myChart" width="400" height="200"></canvas>
+    <div id="chartContainer">
+        <canvas id="myChart"></canvas>
+    </div>
 
     <script>
         // Fetch data from the Flask endpoint
@@ -39,14 +50,36 @@
                     datasets: [{
                         label: 'Volume',
                         data: volumes,
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                        borderWidth: 1,
-                        fill: false,
+                        borderColor: 'orange',  // Change line color to orange
+                        backgroundColor: 'rgba(255, 159, 64, 0.2)',  // Orange background color
+                        borderWidth: 2,
+                        fill: true,
                     }]
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,  // Disable aspect ratio to adjust size
+                    plugins: {
+                        legend: {
+                            labels: {
+                                // Change legend label font color and size
+                                font: {
+                                    size: 14,
+                                    color: 'black'
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Volume: ${context.raw.y}`;
+                                },
+                                title: function(context) {
+                                    return `Time: ${context[0].raw.xLabel}`;
+                                }
+                            }
+                        }
+                    },
                     scales: {
                         x: {
                             type: 'time',
@@ -55,25 +88,35 @@
                             },
                             title: {
                                 display: true,
-                                text: 'Timestamp'
+                                text: 'Timestamp',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'  // Make x-axis title bold
+                                },
+                                color: 'black'  // Set x-axis title color
+                            },
+                            ticks: {
+                                font: {
+                                    size: 12  // Increase font size for x-axis ticks
+                                },
+                                color: 'black'  // Set x-axis tick color
                             }
                         },
                         y: {
                             title: {
                                 display: true,
-                                text: 'Volume'
-                            }
-                        }
-                    },
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return `Volume: ${context.parsed.y}`;
+                                text: 'Volume',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'  // Make y-axis title bold
                                 },
-                                title: function(context) {
-                                    return `Time: ${context[0].label}`;
-                                }
+                                color: 'black'  // Set y-axis title color
+                            },
+                            ticks: {
+                                font: {
+                                    size: 12  // Increase font size for y-axis ticks
+                                },
+                                color: 'black'  // Set y-axis tick color
                             }
                         }
                     }
