@@ -9,7 +9,7 @@
     <style>
         /* Adjust canvas size and margin */
         #chartContainer {
-            width: 600px;  /* Fixed width */
+            width: 1000px;  /* Fixed width */
             height: 600px; /* Fixed height */
             margin: auto;
             display: block;
@@ -23,6 +23,8 @@
     </div>
 
     <script>
+        let chart;  // Declare chart variable globally
+
         // Fetch data from the Flask endpoint
         fetch('/data')
             .then(response => response.json())
@@ -43,7 +45,9 @@
             const timestamps = data.map(d => new Date(d.time));
             const volumes = data.map(d => d.volume);
 
-            const chart = new Chart(ctx, {
+            const maxYValue = Math.max(...volumes);  // Find maximum volume value
+
+            chart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: timestamps,
@@ -54,6 +58,7 @@
                         backgroundColor: 'rgba(255, 159, 64, 0.2)',  // Orange background color
                         borderWidth: 2,
                         fill: true,
+                        hidden: false  // Initially show the dataset
                     }]
                 },
                 options: {
@@ -61,12 +66,17 @@
                     maintainAspectRatio: false,  // Disable aspect ratio to adjust size
                     plugins: {
                         legend: {
+                            position: 'right',  // Position legend to the right
                             labels: {
                                 // Change legend label font color and size
                                 font: {
                                     size: 14,
                                     color: 'black'
                                 }
+                            },
+                            onClick: function(event, legendItem) {
+                                // Prevent default toggle behavior
+                                event.stopPropagation();
                             }
                         },
                         tooltip: {
@@ -117,7 +127,8 @@
                                     size: 12  // Increase font size for y-axis ticks
                                 },
                                 color: 'black'  // Set y-axis tick color
-                            }
+                            },
+                            suggestedMax: maxYValue + 10  // Add some padding above the highest data point
                         }
                     }
                 }
