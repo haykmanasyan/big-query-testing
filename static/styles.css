@@ -1,0 +1,8 @@
+/* Adjust canvas size and margin */
+#chartContainer {
+    width: 1000px;  /* Fixed width */
+    height: 600px; /* Fixed height */
+    margin: auto;
+    display: block;
+    float: left;  /* Align to the left */
+}

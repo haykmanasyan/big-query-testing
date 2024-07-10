@@ -2,7 +2,7 @@ from flask import Flask, render_template, jsonify
 from google.cloud import bigquery
 import datetime
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static')
 
 # Initialize BigQuery client
 client = bigquery.Client()
