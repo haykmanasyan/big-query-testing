@@ -71,11 +71,11 @@
                         },
                         tooltip: {
                             callbacks: {
-                                label: function(context) {
-                                    return `Volume: ${context.raw.y}`;
+                                label: function(tooltipItem) {
+                                    return `Volume: ${tooltipItem.raw}`;
                                 },
-                                title: function(context) {
-                                    return `Time: ${context[0].raw.xLabel}`;
+                                title: function(tooltipItems) {
+                                    return `Time: ${tooltipItems[0].label}`;
                                 }
                             }
                         }
